@@ -129,6 +129,53 @@
             {{ $t("telegramProtectContentDescription") }}
         </div>
     </div>
+
+    <div class="mb-3">
+        <div class="form-check form-switch">
+            <input v-model="$parent.notification.telegramCancelNotification" class="form-check-input" type="checkbox" />
+            <label class="form-check-label">{{ $t("telegramCancelNotification") }}</label>
+        </div>
+
+        <div class="form-text">
+            {{ $t("telegramCancelNotificationDescription") }}
+        </div>
+    </div>
+
+    <template v-if="$parent.notification.telegramCancelNotification">
+        <div class="mb-3">
+            <label for="telegram-cancel-notification-window" class="form-label">
+                {{ $t("telegramCancelNotificationWindow") }}
+            </label>
+            <input
+                id="telegram-cancel-notification-window"
+                v-model.number="$parent.notification.telegramCancelNotificationWindow"
+                type="number"
+                class="form-control"
+                min="1"
+                :max="maxCancelNotificationWindow"
+                step="1"
+                required
+            />
+            <div class="form-text">
+                {{ $t("telegramCancelNotificationWindowDescription") }}
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <div class="form-check form-switch">
+                <input
+                    v-model="$parent.notification.telegramCancelNotificationSendUpMessage"
+                    class="form-check-input"
+                    type="checkbox"
+                />
+                <label class="form-check-label">{{ $t("telegramCancelNotificationSendUpMessage") }}</label>
+            </div>
+
+            <div class="form-text">
+                {{ $t("telegramCancelNotificationSendUpMessageDescription") }}
+            </div>
+        </div>
+    </template>
 </template>
 
 <script>
@@ -140,6 +187,12 @@ export default {
     components: {
         HiddenInput,
         TemplatedTextarea,
+    },
+    data() {
+        return {
+            // Telegram bots cannot delete messages older than 48 hours
+            maxCancelNotificationWindow: 48 * 60 * 60,
+        };
     },
     computed: {
         telegramTemplatedTextareaPlaceholder() {
@@ -154,6 +207,7 @@ Uptime Kuma Alert{% if monitorJSON %} - {{ monitorJSON['name'] }}{% endif %}
     },
     mounted() {
         this.$parent.notification.telegramServerUrl ||= "https://api.telegram.org";
+        this.$parent.notification.telegramCancelNotificationWindow ||= 300;
     },
     methods: {
         /**
