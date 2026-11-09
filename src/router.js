@@ -7,7 +7,6 @@ import DashboardHome from "./pages/DashboardHome.vue";
 import Details from "./pages/Details.vue";
 import EditMonitor from "./pages/EditMonitor.vue";
 import EditMaintenance from "./pages/EditMaintenance.vue";
-import List from "./pages/List.vue";
 const Settings = () => import("./pages/Settings.vue");
 import Setup from "./pages/Setup.vue";
 import StatusPage from "./pages/StatusPage.vue";
@@ -80,8 +79,15 @@ const routes = [
                         ],
                     },
                     {
+                        // Mobile only: the dashboard's important events, reached from the header
+                        name: "Events",
+                        path: "/events",
+                        component: DashboardHome,
+                    },
+                    {
+                        // The monitor list is the mobile home screen now; keep old links working
                         path: "/list",
-                        component: List,
+                        redirect: "/dashboard",
                     },
                     {
                         path: "/settings",
@@ -195,4 +201,15 @@ export const router = createRouter({
     linkActiveClass: "active",
     history: createWebHistory(),
     routes,
+    scrollBehavior(to, from, savedPosition) {
+        // Back/forward returns to where you were, e.g. the same spot in the monitor list
+        if (savedPosition) {
+            return savedPosition;
+        }
+        // On phones a new screen starts at the top, like a native app
+        if (window.matchMedia("(max-width: 767.98px)").matches) {
+            return { top: 0 };
+        }
+        return false;
+    },
 });

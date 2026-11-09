@@ -128,14 +128,16 @@
             </router-link>
 
             <router-link
-                v-if="$root.loggedIn && hasMonitors"
-                to="/list"
-                class="header-status"
-                :class="$root.stats.down > 0 ? 'is-down' : 'is-up'"
+                v-if="$root.loggedIn"
+                to="/events"
+                class="header-action"
+                active-class=""
+                exact-active-class=""
+                :class="{ 'is-active': $route.name === 'Events' }"
+                :aria-label="unseenEvents > 0 ? `${$t('Events')} (${unseenEvents})` : $t('Events')"
             >
-                <span class="dot" />
-                <template v-if="$root.stats.down > 0">{{ $root.stats.down }} {{ $t("Down") }}</template>
-                <template v-else>{{ $root.stats.up }} {{ $t("Up") }}</template>
+                <font-awesome-icon icon="bell" />
+                <span v-if="unseenEvents > 0" class="action-badge">{{ unseenEventsLabel }}</span>
             </router-link>
         </header>
 
@@ -156,6 +158,7 @@
                 exact-active-class=""
                 :class="{ 'is-active': activeTab === tab.to }"
                 :aria-current="activeTab === tab.to ? 'page' : undefined"
+                @click="onTabClick(tab)"
             >
                 <span class="tab-icon">
                     <font-awesome-icon :icon="tab.icon" />
@@ -191,6 +194,7 @@ export default {
         return {
             toastContainer: null,
             numActiveToasts: 0,
+            unseenEvents: 0,
             toastContainerObserver: null,
         };
     },
@@ -204,21 +208,17 @@ export default {
             return classes;
         },
 
-        hasMonitors() {
-            return Object.keys(this.$root.monitorList).length > 0;
-        },
-
         /**
-         * Tabs of the mobile bottom navigation
+         * Tabs of the mobile bottom navigation. The monitor list is the home
+         * screen; its badge counts monitors that are down right now.
          * @returns {object[]} Tabs
          */
         mobileTabs() {
             return [
-                { to: "/dashboard", icon: "tachometer-alt", label: this.$t("Home") },
                 {
-                    to: "/list",
+                    to: "/dashboard",
                     icon: "list",
-                    label: this.$t("List"),
+                    label: this.$t("monitorsTab"),
                     badge: this.$root.stats.down > 0 ? this.$root.stats.down : null,
                 },
                 { to: "/add", icon: "plus", label: this.$t("Add") },
@@ -227,20 +227,16 @@ export default {
         },
 
         /**
-         * Which bottom tab a route belongs to. Monitor pages live under the
-         * List tab, since that is where they are opened from on mobile.
+         * Which bottom tab a route belongs to
          * @returns {string|null} Path of the active tab
          */
         activeTab() {
             const path = this.$route.path;
-            if (path === "/dashboard") {
-                return "/dashboard";
-            }
             if (path === "/add") {
                 return "/add";
             }
-            if (path === "/list" || /^\/(dashboard|edit|clone)\/\d+/.test(path)) {
-                return "/list";
+            if (path === "/dashboard" || path === "/events" || /^\/(dashboard|edit|clone)\/\d+/.test(path)) {
+                return "/dashboard";
             }
             if (/^\/(settings|maintenance|manage-status-page|add-status-page|add-maintenance)/.test(path)) {
                 return "/settings";
@@ -253,8 +249,11 @@ export default {
          * @returns {boolean} Whether to show it
          */
         showBackButton() {
-            const path = this.$route.path;
-            return this.$root.loggedIn && !["/dashboard", "/list", "/add", "/settings"].includes(path);
+            return this.$root.loggedIn && !["/dashboard", "/add", "/settings"].includes(this.$route.path);
+        },
+
+        unseenEventsLabel() {
+            return this.unseenEvents > 99 ? "99+" : String(this.unseenEvents);
         },
 
         hasNewVersion() {
@@ -266,7 +265,29 @@ export default {
         },
     },
 
-    watch: {},
+    watch: {
+        "$root.loggedIn": {
+            immediate: true,
+            handler(loggedIn) {
+                if (loggedIn) {
+                    this.countUnseenEvents();
+                }
+            },
+        },
+
+        "$route.name": {
+            immediate: true,
+            handler(name) {
+                if (name === "Events") {
+                    this.markEventsSeen();
+                }
+            },
+        },
+    },
+
+    created() {
+        this.$root.emitter.on("newImportantHeartbeat", this.onNewImportantHeartbeat);
+    },
 
     mounted() {
         this.toastContainer = document.querySelector(".bottom-right.toast-container");
@@ -287,6 +308,7 @@ export default {
 
     beforeUnmount() {
         this.toastContainerObserver.disconnect();
+        this.$root.emitter.off("newImportantHeartbeat", this.onNewImportantHeartbeat);
     },
 
     methods: {
@@ -296,6 +318,59 @@ export default {
          */
         clearToasts() {
             toast.clear();
+        },
+
+        /**
+         * Tapping the tab you are already on scrolls back to the top, like a
+         * native tab bar
+         * @param {object} tab Tapped tab
+         * @returns {void}
+         */
+        onTabClick(tab) {
+            if (this.$route.path === tab.to) {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+        },
+
+        /**
+         * Count important events newer than the last visit to the events page.
+         * The first visit ever starts from zero rather than flagging all history.
+         * @returns {void}
+         */
+        countUnseenEvents() {
+            const seenAt = Number(localStorage.eventsSeenAt);
+            if (!seenAt) {
+                this.markEventsSeen();
+                return;
+            }
+            this.$root.getSocket().emit("monitorImportantHeartbeatListPaged", null, 0, 100, (res) => {
+                if (res.ok) {
+                    this.unseenEvents = res.data.filter(
+                        (beat) => this.$root.toDayjs(beat.time).valueOf() > seenAt
+                    ).length;
+                }
+            });
+        },
+
+        /**
+         * A new important event arrived over the socket
+         * @returns {void}
+         */
+        onNewImportantHeartbeat() {
+            if (this.$route.name === "Events") {
+                this.markEventsSeen();
+            } else {
+                this.unseenEvents++;
+            }
+        },
+
+        /**
+         * Reset the unseen counter
+         * @returns {void}
+         */
+        markEventsSeen() {
+            localStorage.eventsSeenAt = Date.now();
+            this.unseenEvents = 0;
         },
 
         /**
@@ -386,47 +461,49 @@ export default {
         }
     }
 
-    .header-status {
-        display: inline-flex;
+    .header-action {
+        position: relative;
+        display: flex;
         align-items: center;
-        gap: 6px;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
         margin-left: auto;
-        padding: 6px 12px;
-        border-radius: 50rem;
-        font-size: 13px;
-        font-weight: 600;
-        white-space: nowrap;
+        margin-right: -8px;
+        border-radius: 50%;
+        color: #555b63;
+        font-size: 19px;
         text-decoration: none;
-        font-variant-numeric: tabular-nums;
-        transition: transform 120ms $easing-out;
+        transition:
+            background-color 120ms $easing-out,
+            transform 120ms $easing-out;
 
         &:active {
-            transform: scale(0.96);
+            transform: scale(0.92);
+            background-color: rgba(0, 0, 0, 0.06);
         }
 
-        .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
+        &.is-active {
+            color: #1c9a4f;
         }
+    }
 
-        &.is-up {
-            color: #177a3f;
-            background-color: rgba($primary, 0.18);
-
-            .dot {
-                background-color: $primary;
-            }
-        }
-
-        &.is-down {
-            color: #b42330;
-            background-color: rgba($danger, 0.12);
-
-            .dot {
-                background-color: $danger;
-            }
-        }
+    .action-badge {
+        position: absolute;
+        top: 3px;
+        left: 21px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 9px;
+        background-color: $danger;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 18px;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+        box-shadow: 0 0 0 2px $mobile-chrome-bg;
     }
 }
 
@@ -622,16 +699,20 @@ main {
             background-color: rgba(255, 255, 255, 0.08);
         }
 
-        .header-status {
-            &.is-up {
-                color: $primary !important;
-                background-color: rgba($primary, 0.12);
+        .header-action {
+            color: $dark-font-color;
+
+            &:active {
+                background-color: rgba(255, 255, 255, 0.08);
             }
 
-            &.is-down {
-                color: #ff6b77 !important;
-                background-color: rgba($danger, 0.2);
+            &.is-active {
+                color: $primary;
             }
+        }
+
+        .action-badge {
+            box-shadow: 0 0 0 2px $dark-header-bg;
         }
     }
 

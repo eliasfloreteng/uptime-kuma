@@ -171,6 +171,10 @@ export default {
          * @returns {object} Style for monitor list
          */
         boxStyle() {
+            // On mobile the list is the home screen and scrolls with the page
+            if (this.$root.isMobile) {
+                return {};
+            }
             if (window.innerWidth > 550) {
                 return {
                     height: `calc(100vh - 160px + ${this.windowTop}px)`,
@@ -209,6 +213,9 @@ export default {
         },
 
         monitorListStyle() {
+            if (this.$root.isMobile) {
+                return {};
+            }
             // The header height has to be changed in case it is modified in the future.
             // +10px is the margin-bottom of the header
             let listHeaderHeight = 58 + 10;
@@ -832,6 +839,43 @@ export default {
             width: 100%;
             margin-top: 0.25rem;
         }
+    }
+}
+
+@media (max-width: 767.98px) {
+    // The home screen list: page-length and edge to edge like a native list,
+    // instead of a fixed-height card with its own scrollbar. Search and filters
+    // stay pinned under the app bar.
+    .shadow-box {
+        height: auto;
+        position: static;
+        margin: 0 -12px !important;
+        padding-bottom: 6px !important;
+        // !important: the global card styles (incl. dark mode) are more specific
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background-color: transparent !important;
+    }
+
+    .list-header {
+        position: sticky;
+        top: calc(52px + env(safe-area-inset-top));
+        z-index: 5;
+        margin-bottom: 4px;
+        padding: 8px 12px 10px;
+        border-radius: 0;
+        background-color: #fff;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+        .dark & {
+            background-color: $dark-header-bg;
+            border-bottom: 1px solid $dark-border-color;
+        }
+    }
+
+    .monitor-list {
+        padding-left: 4px !important;
+        padding-right: 4px !important;
     }
 }
 </style>

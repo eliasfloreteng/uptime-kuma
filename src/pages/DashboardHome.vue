@@ -1,11 +1,11 @@
 <template>
     <transition ref="tableContainer" name="slide-fade" appear>
-        <div v-if="$route.name === 'DashboardHome'">
-            <h1 class="mb-3 page-title">
+        <div v-if="$route.name === 'DashboardHome' || $route.name === 'Events'">
+            <h1 v-if="!$root.isMobile" class="mb-3">
                 {{ $t("Quick Stats") }}
             </h1>
 
-            <div class="shadow-box big-padding text-center mb-3 quick-stats">
+            <div v-if="!isEventsPage" class="shadow-box big-padding text-center mb-3 quick-stats">
                 <div class="row">
                     <div class="col">
                         <h3>{{ $t("Up") }}</h3>
@@ -36,7 +36,14 @@
                 </div>
             </div>
 
-            <div class="shadow-box table-shadow-box table-wrapper" :class="{ 'events-mobile': $root.isMobile }">
+            <!-- Mobile home screen: the monitor list. Events live behind the header bell. -->
+            <MonitorList v-if="$root.isMobile && !isEventsPage" />
+
+            <div
+                v-if="!$root.isMobile || isEventsPage"
+                class="shadow-box table-shadow-box table-wrapper"
+                :class="{ 'events-mobile': $root.isMobile }"
+            >
                 <div class="mb-3 events-header">
                     <h2 v-if="$root.isMobile" class="events-title">{{ $t("Events") }}</h2>
                     <button
@@ -120,6 +127,7 @@ import Datetime from "../components/Datetime.vue";
 import Pagination from "v-pagination-3";
 import Confirm from "../components/Confirm.vue";
 import EventListMobile from "../components/EventListMobile.vue";
+import MonitorList from "../components/MonitorList.vue";
 
 export default {
     components: {
@@ -128,6 +136,7 @@ export default {
         Pagination,
         Confirm,
         EventListMobile,
+        MonitorList,
     },
     props: {
         calculatedHeight: {
@@ -150,6 +159,10 @@ export default {
         };
     },
     computed: {
+        isEventsPage() {
+            return this.$route.name === "Events";
+        },
+
         showGroupColumn() {
             return Object.values(this.$root.monitorList).some((m) => m.parent != null);
         },
@@ -158,6 +171,12 @@ export default {
         },
     },
     watch: {
+        "$root.isMobile"(isMobile) {
+            if (!isMobile && this.isEventsPage) {
+                this.$router.replace("/dashboard");
+            }
+        },
+
         perPage() {
             this.$nextTick(() => {
                 this.getImportantHeartbeatListPaged();
@@ -170,6 +189,12 @@ export default {
     },
 
     mounted() {
+        // The events page is a mobile screen; desktop shows events on the dashboard
+        if (this.isEventsPage && !this.$root.isMobile) {
+            this.$router.replace("/dashboard");
+            return;
+        }
+
         this.getImportantHeartbeatListLength();
 
         this.$root.emitter.on("newImportantHeartbeat", this.onNewImportantHeartbeat);
@@ -360,12 +385,6 @@ table {
 }
 
 @media (max-width: 767.98px) {
-    .page-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin: 4px 4px 12px !important;
-    }
-
     // One compact strip instead of a 3+2 grid of oversized headings
     .quick-stats {
         padding: 14px 6px !important;
