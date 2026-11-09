@@ -136,6 +136,8 @@ export function loadToastSettings() {
         position: POSITION.BOTTOM_RIGHT,
         containerClassName: "toast-container mb-5",
         showCloseButtonOnHover: true,
+        // A burst of alerts would otherwise bury a phone screen; older ones queue.
+        maxToasts: window.matchMedia("(max-width: 767.98px)").matches ? 3 : 20,
 
         filterBeforeCreate: (toast, toasts) => {
             if (toast.timeout === 0) {

@@ -1,11 +1,11 @@
 <template>
     <transition ref="tableContainer" name="slide-fade" appear>
         <div v-if="$route.name === 'DashboardHome'">
-            <h1 class="mb-3">
+            <h1 class="mb-3 page-title">
                 {{ $t("Quick Stats") }}
             </h1>
 
-            <div class="shadow-box big-padding text-center mb-3">
+            <div class="shadow-box big-padding text-center mb-3 quick-stats">
                 <div class="row">
                     <div class="col">
                         <h3>{{ $t("Up") }}</h3>
@@ -36,8 +36,9 @@
                 </div>
             </div>
 
-            <div class="shadow-box table-shadow-box table-wrapper">
-                <div class="mb-3 text-end">
+            <div class="shadow-box table-shadow-box table-wrapper" :class="{ 'events-mobile': $root.isMobile }">
+                <div class="mb-3 events-header">
+                    <h2 v-if="$root.isMobile" class="events-title">{{ $t("Events") }}</h2>
                     <button
                         class="btn btn-sm btn-outline-danger"
                         :disabled="clearingAllEvents"
@@ -46,7 +47,8 @@
                         {{ $t("Clear All Events") }}
                     </button>
                 </div>
-                <table class="table table-borderless table-hover">
+                <EventListMobile v-if="$root.isMobile" :records="displayedRecords" show-name />
+                <table v-else class="table table-borderless table-hover">
                     <thead>
                         <tr>
                             <th v-if="showGroupColumn">{{ $t("Group Name") }}</th>
@@ -117,6 +119,7 @@ import Status from "../components/Status.vue";
 import Datetime from "../components/Datetime.vue";
 import Pagination from "v-pagination-3";
 import Confirm from "../components/Confirm.vue";
+import EventListMobile from "../components/EventListMobile.vue";
 
 export default {
     components: {
@@ -124,6 +127,7 @@ export default {
         Status,
         Pagination,
         Confirm,
+        EventListMobile,
     },
     props: {
         calculatedHeight: {
@@ -346,5 +350,79 @@ table {
 
 .table-wrapper {
     overflow-x: auto;
+}
+
+.events-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+@media (max-width: 767.98px) {
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 4px 4px 12px !important;
+    }
+
+    // One compact strip instead of a 3+2 grid of oversized headings
+    .quick-stats {
+        padding: 14px 6px !important;
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            margin: 0;
+
+            > .col {
+                padding: 0 2px;
+                display: flex;
+                flex-direction: column-reverse;
+                gap: 2px;
+
+                & + .col {
+                    border-left: 1px solid rgba(0, 0, 0, 0.06);
+
+                    .dark & {
+                        border-left-color: $dark-border-color;
+                    }
+                }
+            }
+        }
+
+        h3 {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            color: $secondary-text;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .num {
+            font-size: 24px;
+            line-height: 1.2;
+            font-variant-numeric: tabular-nums;
+        }
+    }
+
+    .events-mobile {
+        padding: 12px 14px 8px !important;
+        overflow: visible;
+
+        .events-header {
+            justify-content: space-between;
+            margin-bottom: 4px !important;
+        }
+
+        .events-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin: 0;
+        }
+    }
 }
 </style>

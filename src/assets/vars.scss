@@ -21,3 +21,16 @@ $easing-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 $easing-in-out: cubic-bezier(0.79, 0.14, 0.15, 0.86);
 
 $dropdown-border-radius: 0.5rem;
+
+// Background of the mobile app bar and tab bar; also the browser theme-color.
+$mobile-chrome-bg: #fff;
+
+// Hover styles only for precise pointers. On touch screens a tap leaves :hover
+// stuck on the element until the next tap elsewhere.
+@mixin hover {
+    @media (hover: hover) and (pointer: fine) {
+        &:hover {
+            @content;
+        }
+    }
+}

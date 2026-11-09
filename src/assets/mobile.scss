@@ -1,0 +1,139 @@
+// Mobile platform layer: the small fixes that make the dashboard feel like an
+// installed app on a phone rather than a desktop site squeezed onto one.
+
+html {
+    // The translucent tap flash fights our own :active feedback.
+    -webkit-tap-highlight-color: transparent;
+    // No font inflation when rotating to landscape.
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+// Fire click immediately: these never need double-tap-to-zoom.
+a,
+button,
+label,
+select,
+summary,
+[role="button"],
+.btn {
+    touch-action: manipulation;
+}
+
+// Long-pressing a control should not select its label or open the link callout.
+// Content text stays selectable.
+.btn,
+.bottom-nav,
+.mobile-header,
+.monitor-list .item,
+.settings-menu .menu-item,
+.nav-link {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+// Press feedback for touch: :hover is gated behind fine pointers, so :active
+// is what a finger sees.
+.btn {
+    transition:
+        transform 120ms $easing-out,
+        background-color 120ms $easing-out,
+        border-color 120ms $easing-out,
+        color 120ms $easing-out;
+
+    &:active:not(:disabled):not(.disabled) {
+        transform: scale(0.97);
+    }
+}
+
+// iOS zooms into any focused field under 16px and never zooms back out.
+@media (pointer: coarse) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea,
+    .form-control,
+    .form-control-sm,
+    .form-select,
+    .form-select-sm,
+    .multiselect__input,
+    .multiselect__single {
+        font-size: 16px !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    body.mobile {
+        // Content area: comfortable gutters that respect landscape notches.
+        .container-fluid {
+            width: 100%;
+            padding-left: max(12px, env(safe-area-inset-left));
+            padding-right: max(12px, env(safe-area-inset-right));
+
+            // The dashboard column uses gx-0, so the row's negative gutter
+            // would otherwise pull every card flush against the screen edge.
+            > .row {
+                margin-left: 0;
+                margin-right: 0;
+            }
+        }
+
+        .shadow-box {
+            border-radius: 16px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+    }
+
+    // Sticky save bars (monitor / maintenance / status page editors) must sit
+    // above the fixed tab bar, not behind it.
+    .fixed-bottom-bar {
+        bottom: calc(57px + env(safe-area-inset-bottom));
+        border-radius: 0;
+        // Opaque enough that form text scrolling underneath doesn't read through
+        background-color: rgba(255, 255, 255, 0.94);
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+
+        .dark & {
+            background-color: rgba($dark-header-bg, 0.96);
+            border-top-color: $dark-border-color;
+        }
+    }
+
+    // Toasts: compact cards floating above the tab bar instead of full-bleed
+    // slabs stacking over half the screen.
+    .Vue-Toastification__container.toast-container {
+        width: 100%;
+        padding: 0 max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+        margin-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+    }
+
+    .Vue-Toastification__toast {
+        min-height: 0;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+        border-radius: 14px;
+        box-shadow:
+            0 8px 24px rgba(0, 0, 0, 0.16),
+            0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .Vue-Toastification__toast-body {
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .Vue-Toastification__icon {
+        width: 18px;
+        height: 18px;
+        margin: 1px 12px auto 0;
+    }
+
+    // There is no hover on touch, so a hover-only close button would never show.
+    .Vue-Toastification__toast:not(:hover) .Vue-Toastification__close-button.show-on-hover {
+        opacity: 0.7;
+    }
+}

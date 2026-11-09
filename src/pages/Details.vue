@@ -145,7 +145,7 @@
                 </div>
             </div>
 
-            <div class="shadow-box">
+            <div class="shadow-box heartbeat-card">
                 <div class="row">
                     <div class="col-md-8">
                         <HeartbeatBar :monitor-id="monitor.id" />
@@ -155,9 +155,9 @@
                             }})
                         </span>
                     </div>
-                    <div class="col-md-4 text-center">
+                    <div class="col-md-4 text-center status-col">
                         <span
-                            class="badge rounded-pill"
+                            class="badge rounded-pill status-badge"
                             :class="'bg-' + status.color"
                             style="font-size: 30px"
                             data-testid="monitor-status"
@@ -325,7 +325,8 @@
                 </div>
             </div>
 
-            <div class="shadow-box table-shadow-box">
+            <div class="shadow-box table-shadow-box events-box">
+                <h2 v-if="$root.isMobile" class="events-title">{{ $t("Events") }}</h2>
                 <div class="dropdown dropdown-clear-data">
                     <button
                         class="btn btn-sm btn-outline-danger dropdown-toggle"
@@ -348,7 +349,8 @@
                         </li>
                     </ul>
                 </div>
-                <table class="table table-borderless table-hover">
+                <EventListMobile v-if="$root.isMobile" :records="displayedRecords" />
+                <table v-else class="table table-borderless table-hover">
                     <thead>
                         <tr>
                             <th>{{ $t("Status") }}</th>
@@ -450,6 +452,7 @@ import Pagination from "v-pagination-3";
 const PingChart = defineAsyncComponent(() => import("../components/PingChart.vue"));
 import Tag from "../components/Tag.vue";
 import CertificateInfo from "../components/CertificateInfo.vue";
+import EventListMobile from "../components/EventListMobile.vue";
 import { getMonitorRelativeURL } from "../util.ts";
 import { URL } from "whatwg-url";
 import DOMPurify from "dompurify";
@@ -465,6 +468,7 @@ import ScreenshotDialog from "../components/ScreenshotDialog.vue";
 
 export default {
     components: {
+        EventListMobile,
         Uptime,
         CountUp,
         Datetime,
@@ -1038,6 +1042,136 @@ table {
 
     .dark & {
         opacity: 0.7;
+    }
+}
+
+@media (max-width: 767.98px) {
+    h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    .url {
+        font-size: 14px;
+        margin-bottom: 14px;
+        overflow-wrap: anywhere;
+    }
+
+    .shadow-box {
+        margin-top: 12px;
+        padding: 16px;
+    }
+
+    // Actions: one evenly split segmented bar, icon over label
+    .functions .btn-group {
+        display: flex;
+        width: 100%;
+
+        .btn,
+        a.btn {
+            flex: 1 1 0;
+            min-width: 0;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 4px 8px;
+            font-size: 13px;
+        }
+    }
+
+    // Status pill on top, then the bar, then the interval
+    .heartbeat-card .row {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+
+    .status-col {
+        text-align: left !important;
+    }
+
+    .status-badge {
+        margin-top: 0;
+        font-size: 15px !important;
+        padding: 6px 14px;
+    }
+
+    .word {
+        display: block;
+        margin-top: 6px;
+        font-size: 13px;
+    }
+
+    // Stats: a grid of compact tiles instead of a tall label/period/value table
+    .stats {
+        padding: 6px !important;
+
+        > .row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+            margin: 0;
+
+            > div {
+                display: flex !important;
+                flex-direction: column;
+                align-items: center;
+                width: auto;
+                margin: 0 !important;
+                padding: 10px 6px;
+
+                > * {
+                    width: auto;
+                    padding: 0;
+                }
+            }
+        }
+
+        h4 {
+            order: 1;
+            font-size: 12px !important;
+            font-weight: 600;
+            margin: 0;
+            color: $secondary-text;
+        }
+
+        p {
+            order: 2;
+            margin: 0 !important;
+            font-size: 11px;
+        }
+
+        .num {
+            order: 0;
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1.25;
+            font-variant-numeric: tabular-nums;
+        }
+    }
+
+    .events-box {
+        padding: 12px 14px 8px !important;
+
+        .events-title {
+            float: left;
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin: 6px 0 0;
+        }
+
+        .dropdown-clear-data {
+            margin-bottom: 4px;
+
+            button {
+                display: inline-block;
+                padding-top: 4px;
+            }
+        }
+
+        .event-list {
+            clear: both;
+        }
     }
 }
 

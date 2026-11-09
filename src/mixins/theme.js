@@ -102,7 +102,8 @@ export default {
             if (this.theme === "dark") {
                 document.querySelector("#theme-color").setAttribute("content", "#161B22");
             } else {
-                document.querySelector("#theme-color").setAttribute("content", "#5cdd8b");
+                // Match the mobile app bar so the status bar blends into it
+                document.querySelector("#theme-color").setAttribute("content", "#ffffff");
             }
         },
     },

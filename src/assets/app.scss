@@ -149,7 +149,7 @@ optgroup {
     background-color: $bg-color;
     border-color: $bg-color;
 
-    &:hover {
+    @include hover {
         $hover-color: darken($bg-color, 3%);
         background-color: $hover-color;
         border-color: $hover-color;
@@ -353,7 +353,7 @@ optgroup {
         background-color: $bg-color;
         border-color: $bg-color;
 
-        &:hover {
+        @include hover {
             $hover-color: darken($bg-color, 3%);
             background-color: $hover-color;
             border-color: $hover-color;
@@ -402,7 +402,11 @@ optgroup {
 
     .monitor-list {
         .item {
-            &:hover {
+            @include hover {
+                background-color: $dark-bg2;
+            }
+
+            &:active {
                 background-color: $dark-bg2;
             }
 
@@ -511,7 +515,11 @@ optgroup {
             overflow: hidden;
         }
 
-        &:hover {
+        @include hover {
+            background-color: $highlight-white;
+        }
+
+        &:active {
             background-color: $highlight-white;
         }
 
@@ -584,8 +592,9 @@ optgroup {
 .action {
     transition: all $easing-in 0.2s;
 
-    &:hover {
-        cursor: pointer;
+    cursor: pointer;
+
+    @include hover {
         transform: scale(1.2);
     }
 }
@@ -655,18 +664,6 @@ $shadow-box-padding: 20px;
     }
 }
 
-@media (max-width: 770px) {
-    .toast-container {
-        margin-bottom: 100px !important;
-    }
-}
-
-@media (max-width: 550px) {
-    .toast-container {
-        margin-bottom: 126px !important;
-    }
-}
-
 .zoom-cursor {
     cursor: zoom-in;
 }
@@ -674,3 +671,6 @@ $shadow-box-padding: 20px;
 // Localization
 
 @import "localization.scss";
+
+// Mobile
+@import "mobile.scss";
